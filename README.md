@@ -17,7 +17,7 @@ npm install -g generator-hllui
 Then generate your new project on your target directory:
 
 ```bash
-yo hllui --force
+yo hllui
 ```
 
 ## About Sprites
