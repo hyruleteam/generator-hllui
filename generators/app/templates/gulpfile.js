@@ -1,95 +1,166 @@
-var gulp = require('gulp'),
-    minifycss = require('gulp-minify-css'),
-    fileinclude = require('gulp-file-include'),
-    sass = require('gulp-sass'),
-    clean = require('gulp-clean'),
-    spritesmith = require('gulp.spritesmith'),
-    concat = require('gulp-concat'),
-    uglify = require('gulp-uglify'),
-    autoprefixer = require('gulp-autoprefixer'),
-    browserSync = require('browser-sync').create();
-gulp.task('browser-sync', function() {
-    var files = [
-        'qwui/html/**/*.html',
-        'qwui/js/*/*.js'
-    ];
+const gulp = require('gulp');
+const minifyCSS = require('gulp-minify-css');
+const sass = require('gulp-sass');
+const spritesmith = require('gulp.spritesmith');
+const uglify = require('gulp-uglify');
+const autoprefixer = require('gulp-autoprefixer');
+const merge = require('merge-stream');
+const clean = require('gulp-clean');
+const browserSync = require('browser-sync').create();
+const plumber = require('gulp-plumber');
+const changed = require('gulp-changed');
+const watch = require('gulp-watch');
+const sourcemaps = require('gulp-sourcemaps');
+const fileinclude = require('gulp-file-include');
 
-    browserSync.init(files, {
+//编译路径
+const devPath = './<%= folderName %>';
+const distPath = './dist';
+
+//browser-sync
+gulp.task('browser-sync', () => {
+    browserSync.init({
         server: {
-            baseDir: "./dist"
+            baseDir: distPath
         },
-        port: 8080,
+        port: 8091,
         notify: false, //刷新是否提示
-        open: true //是否自动打开页面
+        open: false //是否自动打开页面
     });
+
 });
 
-
-gulp.task('style', function() {
-    gulp.src('./qwui/sass/*.scss')
-        .pipe(sass().on('error', sass.logError))
-        // .pipe(cssmin())
-        .pipe(gulp.dest('./dist/css'))
-        .pipe(browserSync.stream()); //browserSync:只监听sass编译之后的css
+//html
+gulp.task('buildHtml', () => {
+    return watch(`${devPath}/html/**/*.html`, () => {
+        gulp.src([`${devPath}/html/**/*.html`, `!${devPath}/html/include/*.html`])
+            .pipe(plumber())
+            .pipe(changed(`${distPath}/html`, {hasChanged: changed.compareContents}))
+            .pipe(fileinclude({
+                prefix: '@@',
+                basepath: '@file'
+            }))
+            .pipe(gulp.dest(`${distPath}/html`))
+            .pipe(browserSync.stream());
+    })
 });
 
-gulp.task('prefixer', function() {
-    gulp.src('dist/css/*.css')
-        .pipe(autoprefixer({
-            browsers: ['last 2 versions', 'last 2 Explorer versions', '> 5%']
-        }))
-        .pipe(gulp.dest('./dist/css'))
-})
-
-gulp.task('html', function() {
-    gulp.src(['qwui/html/*.html', 'qwui/html/*/*.html', '!qwui/html/include/*.html'])
-        .pipe(fileinclude({
-            prefix: '@@',
-            basepath: '@file'
-        }))
-        .pipe(gulp.dest('./dist/html'))
+//style
+gulp.task('buildStyle', () => {
+    return watch(`${devPath}/sass/**/*.scss`, () => {
+        gulp.src(`${devPath}/sass/*.scss`)
+            .pipe(plumber())
+            .pipe(sourcemaps.init())
+            .pipe(changed(`${distPath}/css`, {hasChanged: changed.compareContents, extension: '.css'}))
+            .pipe(sass().on('error', sass.logError))
+            .pipe(sourcemaps.write('.'))
+            .pipe(gulp.dest(`${distPath}/css`))
+            .pipe(browserSync.stream()); //browserSync:只监听sass编译之后的css
+    })
 });
 
-gulp.task('js', function() {
-    gulp.src(['qwui/js/*/*.js', 'qwui/js/*/*/*.js'])
-        .on('error', function(error) {
-            // Would like to catch the error here
-            console.log(error);
-        })
-        .pipe(uglify())
-        .pipe(gulp.dest('./dist/js'))
+//js
+gulp.task('buildJs', () => {
+    return watch(`${devPath}/js/**/*.js`, () => {
+        gulp.src([`${devPath}/js/**/*.js`])
+            .pipe(plumber())
+            .pipe(changed(`${distPath}/js`, {hasChanged: changed.compareContents}))
+            .pipe(gulp.dest(`${distPath}/js`))
+            .pipe(browserSync.stream());
+    })
 });
 
-var argv = require('minimist')(process.argv.slice(2));
+//images
+gulp.task('buildImages', () => {
+    return watch(`${devPath}/img/**/*`, () => {
+        gulp.src([`${devPath}/img/**/*`])
+            .pipe(plumber())
+            .pipe(gulp.dest(`${distPath}/img`))
+            .pipe(browserSync.stream())
+    })
+});
 
-var spritesMithConfig = {
+//sprites
+const argv = require('minimist')(process.argv.slice(2));
+
+const spritesMithConfig = {
     imgName: argv.name + '.png',
     cssName: '_' + argv.name + '.scss',
     cssFormat: 'scss',
     algorithm: 'binary-tree',
-    imgPath: '../images/sprites/' + argv.name + '.png',
-    padding: 8
+    imgPath: '../images/sprite/' + argv.name + '.png',
+    padding: 10
 }
 
-gulp.task('sprite', function() {
-    var spriteData = gulp.src('./qwui/images/sprites/' + argv.name + '/*.png').pipe(spritesmith(spritesMithConfig));
-    spriteData.img.pipe(gulp.dest("./dist/images/sprites"));
-    spriteData.css.pipe(gulp.dest("./qwui/sass/module/icon"));
-})
+gulp.task('buildSprite', () => {
+    const spriteData =
+        gulp.src(`${devPath}/images/sprites/${argv.name}/*`)
+            .pipe(plumber())
+            .pipe(spritesmith(spritesMithConfig));
 
-// 执行任务
-gulp.task('qwui', function() {
-
-    gulp.run('browser-sync');
-    gulp.watch(['qwui/sass/*/*.scss', 'qwui/sass/*/*/*.scss'], ['style']);
-    gulp.watch(['qwui/html/**/*.html', ], ['html'])
-    gulp.watch(['qwui/js/*/*.js', 'qwui/js/*/*/*.js'], ['js']);
+    spriteData.img.pipe(gulp.dest(`${devPath}/images/sprite`));
+    spriteData.img.pipe(gulp.dest(`${distPath}/images/sprite`));
+    spriteData.css.pipe(gulp.dest(`${devPath}/sass/module/icon`));
 });
 
-gulp.task('prod', function() {
+//clean
+gulp.task('buildClean', () => {
+    return gulp.src([`${distPath}`])
+        .pipe(plumber())
+        .pipe(clean({
+            force: true
+        }))
+});
 
-    gulp.watch(['qwui/js/*.js'], ['js']);
-    gulp.watch(['qwui/sass/*/*.scss', 'qwui/sass/*/*/*.scss'], ['style']);
-    gulp.watch(['qwui/html/*.html', 'qwui/html/*/*.html'], ['html']);
-    gulp.watch(['dist/css/*.css'], ['prefixer']);
+//devPack
+gulp.task('devPack', ['buildStyle','buildHtml','buildJs']);
+
+//buildPack
+gulp.task('buildAssets', () => {
+    const html = gulp.src([`${devPath}/html/**/*.html`, `!${devPath}/html/include/*.html`])
+        .pipe(plumber())
+        .pipe(changed(`${distPath}/html`, {hasChanged: changed.compareContents}))
+        .pipe(fileinclude({
+            prefix: '@@',
+            basepath: '@file'
+        }))
+        .pipe(gulp.dest(`${distPath}/html`))
+        .pipe(browserSync.stream());
+
+    const styles = gulp.src([`${devPath}/sass/*.scss`])
+        .pipe(plumber())
+        .pipe(sass().on('error', sass.logError))
+        .pipe(gulp.dest(`${distPath}/css`))
+
+    const pagejs = gulp.src(`${devPath}/js/**/*.js`)
+        .pipe(plumber())
+        .pipe(uglify())
+        .pipe(gulp.dest(`${distPath}/js`));
+
+    const images = gulp.src([`${devPath}/images/**/*`, `!${devPath}/images/sprites/**/*`])
+        .pipe(gulp.dest(`${distPath}/images`))
+
+    return merge(styles, pagejs, images,html);
+});
+
+gulp.task('buildRevPack', ['buildAssets'], () => {
+    const styles = gulp.src([`${distPath}/css/*.css`])
+        .pipe(plumber())
+        .pipe(autoprefixer({
+            browsers: ['last 2 versions', 'last 2 Explorer versions', '> 5%']
+        }))
+        .pipe(minifyCSS())
+        .pipe(rev())
+        .pipe(gulp.dest(`${distPath}/css/`))
+        .pipe(rev.manifest())
+        .pipe(gulp.dest(`${distPath}/rev/css`))
+
+    return merge(styles);
+})
+
+gulp.task('default', ['buildAssets', 'browser-sync'], () => {
+    gulp.watch([
+        `${distPath}/**/*.+(css|js|png|jpg|ttf|html)`
+    ])
+        .on('change', browserSync.reload);
 });

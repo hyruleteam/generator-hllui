@@ -1,7 +1,7 @@
 {
-  "name": "generator-qwui",
-  "version": "1.1.10",
-  "description": "quanwang fronted-team builder",
+  "name": "generator-hllui",
+  "version": "1.0.0",
+  "description": "hyrule fronted-team builder",
   "files": [
     "generators"
   ],
@@ -12,7 +12,7 @@
     "yeoman-generator": "^1.1.1",
     "chalk": "^1.0.0",
     "yosay": "^1.0.2",
-    "gulp-util":"^3.0.0"
+    "gulp-util": "^3.0.0"
   },
-  "repository": "https://github.com/wenyuking/generator-qwui.git"
+  "repository": "https://github.com/hyruleteam/generator-hllui.git"
 }
