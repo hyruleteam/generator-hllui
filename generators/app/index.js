@@ -22,7 +22,7 @@ module.exports = class extends Generator {
         super(args, opts);
 
         this.name = path.basename(process.cwd());
-        this.author = "Jacobwang";
+        this.author = this.user.git.name();
         this.installMode = 'npm'
         this.description = '';
         this.type = '';
