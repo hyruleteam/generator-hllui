@@ -158,7 +158,7 @@ gulp.task('buildRevPack', ['buildAssets'], () => {
     return merge(styles);
 })
 
-gulp.task('default', ['buildAssets', 'browser-sync'], () => {
+gulp.task('default', ['buildAssets','devPack', 'browser-sync'], () => {
     gulp.watch([
         `${distPath}/**/*.+(css|js|png|jpg|ttf|html)`
     ])
