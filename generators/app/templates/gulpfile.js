@@ -113,7 +113,7 @@ gulp.task('buildClean', () => {
 });
 
 //devPack
-gulp.task('devPack', ['buildStyle','buildHtml','buildJs']);
+gulp.task('devPack', ['buildStyle','buildHtml','buildJs','buildImages']);
 
 //buildPack
 gulp.task('buildAssets', () => {
