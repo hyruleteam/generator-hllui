@@ -113,6 +113,12 @@ module.exports = class extends Generator {
         );
 
         this.fs.copyTpl(
+            this.templatePath('README.md'),
+            this.destinationPath('README.md'),
+            data
+        );
+
+        this.fs.copyTpl(
             this.templatePath('package.json'),
             this.destinationPath('package.json'),
             data
