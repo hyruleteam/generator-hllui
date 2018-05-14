@@ -1,6 +1,6 @@
 {
   "name": "generator-hllui",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "hyrule fronted-team builder",
   "files": [
     "generators"
