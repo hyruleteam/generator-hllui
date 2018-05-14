@@ -138,19 +138,19 @@ module.exports = class extends Generator {
     	var folderName = this.destinationPath(this.folderName);
 
         var exec = require('child_process').exec,
-            command,
             child;
 
         if(os.platform() === 'darwin'){
-            command = 'rm -rf .git'
-        }else if(os.platform === 'win32'){
-            command = 'rd/s/q .git'
+            child = exec('rm -rf .git',{cwd: folderName}, function(err, out) {
+                console.log(out);
+                err && console.log(err);
+            });
+        }else if(os.platform() === 'win32'){
+            child = exec('rd/s/q .git',{cwd: folderName}, function(err, out) {
+                console.log(out);
+                err && console.log(err);
+            });
         }
-
-        child = exec(command,{cwd: folderName}, function(err, out) {
-            console.log(out);
-            err && console.log(err);
-        });
     }
 
     install() {
