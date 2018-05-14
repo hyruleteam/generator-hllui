@@ -6,6 +6,8 @@ const Generator = require('yeoman-generator');
 const fs = require('fs');
 // 加载路径模块
 const path = require('path');
+//加载OS模块
+const os = require('os');
 // 加载输出模块
 const chalk = require('chalk');
 //加载yeoman语言输出模块
@@ -136,12 +138,18 @@ module.exports = class extends Generator {
     	var folderName = this.destinationPath(this.folderName);
 
         var exec = require('child_process').exec,
+            command,
             child;
 
-        child = exec('rm -rf .git',{cwd: folderName}, function(err, out) {
+        if(os.platform() === 'darwin'){
+            command = 'rm -rf .git'
+        }else if(os.platform === 'win32'){
+            command = 'rd/s/q .git'
+        }
+
+        child = exec(command,{cwd: folderName}, function(err, out) {
             console.log(out);
             err && console.log(err);
-
         });
     }
 
