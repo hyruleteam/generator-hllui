@@ -146,10 +146,7 @@ module.exports = class extends Generator {
                 err && console.log(err);
             });
         }else if(os.platform() === 'win32'){
-            child = exec('rd/s/q .git',{cwd: folderName}, function(err, out) {
-                console.log(out);
-                err && console.log(err);
-            });
+            child = exec('rd/s/q .git',{cwd: folderName});
         }
     }
 
